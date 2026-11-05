@@ -15,25 +15,28 @@
     "Courier New", monospace;
 }
 
-/* Light theme values */
+/* Light theme values — a warm off-white reading surface with near-black text
+   and a restrained cobalt accent, after thinkingmachines.ai. */
 :root,
 [data-theme="light"] {
-  --background: #fdfdfd;
-  --foreground: #282728;
-  --accent: #006cac;
+  --background: #ffffff;
+  --foreground: #282828;
+  --accent: #0155bf;
   --accent-foreground: #ffffff;
-  --muted: #e6e6e6;
-  --muted-foreground: #6b7280;
-  --border: #ece9e9;
+  --muted: #f3f3f2;
+  --muted-foreground: #676767;
+  --border: #e5e2dd;
+  --border-strong: #cfcbc4;
 }
 
-/* Dark theme values */
+/* Dark theme values — the same warm-neutral palette inverted. */
 [data-theme="dark"] {
-  --background: #212737;
-  --foreground: #eaedf3;
-  --accent: #ff6b01;
-  --accent-foreground: #ffffff;
-  --muted: #343f60;
-  --muted-foreground: #afb9ca;
-  --border: #ab4b08;
+  --background: #191918;
+  --foreground: #eae7e1;
+  --accent: #7fb2ff;
+  --accent-foreground: #101828;
+  --muted: #262623;
+  --muted-foreground: #a3a09a;
+  --border: #35332f;
+  --border-strong: #4d4a44;
 }

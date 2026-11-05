@@ -1,10 +1,10 @@
 ---
 import { type CollectionEntry, getCollection, render } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
 import PostLayout from "@/layouts/PostLayout.astro";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
 import Datetime from "@/components/Datetime.astro";
-import Tag from "@/components/Tag.astro";
 import { getPostSlug, getPostUrl } from "@/utils/getPostPaths";
 import { getSortedPosts } from "@/utils/getSortedPosts";
 import { slugifyStr } from "@/utils/slugify";
@@ -73,7 +73,12 @@ const {
   hideEditPost,
 } = post.data;
 
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+
+// Only h2/h3 make a useful margin TOC; deeper levels get noisy.
+const tocHeadings = headings.filter(
+  heading => heading.depth === 2 || heading.depth === 3
+);
 
 let ogImageUrl: string | undefined;
 
@@ -104,74 +109,101 @@ const ogImage = ogImageUrl
   pubDatetime={pubDatetime}
   modDatetime={modDatetime}
 >
-  <Header />
+  <Header variant="reading" />
 
-  <BackButton />
+  <BackButton variant="reading" />
 
-  <main
-    id="main-content"
-    class:list={["app-layout", { "mt-8": !config.features.showBackButton }]}
-    data-pagefind-body
-  >
-    <h1
-      style={{ viewTransitionName: toTransitionName(post.id) }}
-      class="text-accent inline-block text-2xl font-bold sm:text-3xl"
-    >
-      {title}
-    </h1>
-
-    <div class="my-2 flex items-center gap-2">
-      <Datetime {pubDatetime} {modDatetime} {timezone} size="lg" />
-      <span
-        aria-hidden="true"
-        class:list={[
-          "text-muted-foreground max-sm:hidden",
-          { hidden: !config.features.editPost?.enabled || hideEditPost },
-        ]}
+  <main id="main-content" class="post-page" data-pagefind-body>
+    <header class="post-head">
+      <h1
+        style={{ viewTransitionName: toTransitionName(post.id) }}
+        class="post-title"
       >
-        |
-      </span>
-      <EditPost {hideEditPost} {post} class="max-sm:hidden" />
+        {title}
+      </h1>
+
+      {
+        description && (
+          <p class="post-subtitle" data-pagefind-ignore>
+            {description}
+          </p>
+        )
+      }
+
+      <div class="post-meta">
+        <Datetime {pubDatetime} {modDatetime} {timezone} showIcon={false} />
+        <span
+          aria-hidden="true"
+          class:list={[
+            "post-meta-sep",
+            { hidden: !config.features.editPost?.enabled || hideEditPost },
+          ]}
+        >
+          ·
+        </span>
+        <EditPost {hideEditPost} {post} showIcon={false} />
+      </div>
+    </header>
+
+    <div class="post-shell">
+      {
+        tocHeadings.length > 0 && (
+          <nav class="post-toc" aria-label="目录">
+            <ul>
+              {tocHeadings.map(heading => (
+                <li class:list={[`toc-depth-${heading.depth}`]}>
+                  <a href={`#${heading.slug}`}>{heading.text}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )
+      }
+
+      <article id="article" class="post-content app-prose">
+        <Content />
+      </article>
     </div>
 
-    <article
-      id="article"
-      class:list={[
-        "mt-8 w-full",
-        "app-prose max-w-app",
-        "prose-pre:bg-(--shiki-light-bg) dark:prose-pre:bg-(--shiki-dark-bg)",
-      ]}
-    >
-      <Content />
-    </article>
+    <div class="post-footer">
+      <ul class="post-tags" data-pagefind-ignore>
+        {
+          tags.map(tag => (
+            <li>
+              <a
+                href={getRelativeLocaleUrl(locale, `tags/${slugifyStr(tag)}/`)}
+              >
+                {tag}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
 
-    <hr class="my-8 border-dashed" />
+      <div class="post-actions" data-pagefind-ignore>
+        <EditPost class="sm:hidden" {hideEditPost} {post} showIcon={false} />
+        <ShareLinks />
+        <BackToTopButton />
+      </div>
 
-    <EditPost class="sm:hidden" {hideEditPost} {post} />
-
-    <BackToTopButton />
-
-    <ul class="mt-4 mb-8 flex flex-wrap gap-4 sm:my-8">
-      {tags.map(tag => <Tag tag={slugifyStr(tag)} tagName={tag} size="sm" />)}
-    </ul>
-
-    <ShareLinks />
-
-    <hr class="my-8 border-dashed" />
-
-    <AdjacentPostNav {prevPost} {nextPost} />
+      <AdjacentPostNav {prevPost} {nextPost} />
+    </div>
   </main>
   <Footer />
 </PostLayout>
 
 <script is:inline data-astro-rerun>
   function createProgressBar() {
+    const existing = document.getElementById("reading-progress");
+    if (existing) existing.remove();
+
     const progressContainer = document.createElement("div");
+    progressContainer.id = "reading-progress";
     progressContainer.className =
-      "progress-container fixed top-0 z-10 h-1 w-full bg-background";
+      "progress-container fixed top-0 z-10 h-0.5 w-full bg-background";
 
     const progressBar = document.createElement("div");
-    progressBar.className = "progress-bar h-1 w-0 bg-accent";
+    progressBar.className = "progress-bar h-0.5 w-0 bg-accent";
     progressBar.id = "myBar";
 
     progressContainer.appendChild(progressBar);
@@ -186,22 +218,91 @@ const ogImage = ogImageUrl
       const height =
         document.documentElement.scrollHeight -
         document.documentElement.clientHeight;
-      const scrolled = (winScroll / height) * 100;
-      if (document) {
-        const myBar = document.getElementById("myBar");
-        if (myBar) {
-          myBar.style.width = scrolled + "%";
-        }
+      const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+      const myBar = document.getElementById("myBar");
+      if (myBar) {
+        myBar.style.width = scrolled + "%";
       }
     });
   }
   updateScrollProgress();
 
+  /** Build the margin TOC's active state from the current scroll position. */
+  function initPostToc() {
+    window.__postTocCleanup?.();
+
+    const toc = document.querySelector(".post-toc");
+    if (!toc) return;
+
+    const links = Array.from(toc.querySelectorAll("a"));
+    const targets = links
+      .map(link => {
+        const hash = link.getAttribute("href") ?? "";
+        try {
+          return document.getElementById(decodeURIComponent(hash.slice(1)));
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    if (targets.length === 0) return;
+
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      const marker = window.innerHeight * 0.25 + 96;
+      let current = targets[0];
+
+      for (const target of targets) {
+        if (target.getBoundingClientRect().top <= marker) {
+          current = target;
+        } else {
+          break;
+        }
+      }
+
+      for (const link of links) {
+        link.parentElement?.classList.toggle(
+          "is-active",
+          link.getAttribute("href") === `#${current.id}`
+        );
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(update);
+      }
+    };
+
+    document.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    window.__postTocCleanup = () => {
+      document.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.__postTocCleanup = null;
+    };
+
+    update();
+  }
+
+  if (!window.__postTocBound) {
+    window.__postTocBound = true;
+    document.addEventListener("astro:page-load", initPostToc);
+    initPostToc();
+  }
+
   function addHeadingLinks() {
     const headings = Array.from(
-      document.querySelectorAll("h2, h3, h4, h5, h6")
+      document.querySelectorAll(
+        "#article h2, #article h3, #article h4, #article h5, #article h6"
+      )
     );
     for (const heading of headings) {
+      if (heading.querySelector(".heading-link")) continue;
       heading.classList.add("group");
       const link = document.createElement("a");
       link.className =
@@ -219,11 +320,13 @@ const ogImage = ogImageUrl
 
   function attachCopyButtons() {
     const copyButtonLabel = "复制";
-    const codeBlocks = Array.from(document.querySelectorAll("pre"));
+    const codeBlocks = Array.from(document.querySelectorAll("#article pre"));
 
     for (const codeBlock of codeBlocks) {
+      if (codeBlock.closest(".code-block-copy-wrapper")) continue;
+
       const wrapper = document.createElement("div");
-      wrapper.style.position = "relative";
+      wrapper.className = "code-block-copy-wrapper";
 
       const computedStyle = getComputedStyle(codeBlock);
       const hasFileNameOffset =

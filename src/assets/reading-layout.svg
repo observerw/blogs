@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="layout-title layout-desc">
+  <title id="layout-title">宽屏阅读页的三栏结构</title>
+  <desc id="layout-desc">左侧为目录，中间为 660 像素正文栏，右侧为页边侧注。</desc>
+
+  <rect width="1200" height="620" fill="#ffffff"/>
+
+  <text x="72" y="82" fill="#282828" font-family="Georgia, 'Noto Serif SC', serif" font-size="30" font-weight="600">阅读页的三栏结构</text>
+  <text x="72" y="118" fill="#676767" font-family="Georgia, 'Noto Serif SC', serif" font-size="17">目录留在左边，正文保持单栏，注释去右边的页边。</text>
+
+  <!-- TOC rail -->
+  <rect x="72" y="176" width="188" height="360" fill="none" stroke="#e5e2dd" stroke-dasharray="4 6"/>
+  <text x="92" y="206" fill="#676767" font-family="Georgia, 'Noto Serif SC', serif" font-size="13" letter-spacing="1.4">CONTENTS</text>
+  <circle cx="94" cy="246" r="4" fill="#0155bf"/>
+  <rect x="110" y="241" width="112" height="9" fill="#282828"/>
+  <rect x="110" y="282" width="92" height="8" fill="#cfcbc4"/>
+  <rect x="110" y="316" width="104" height="8" fill="#cfcbc4"/>
+  <rect x="110" y="350" width="78" height="8" fill="#cfcbc4"/>
+
+  <!-- Article column -->
+  <rect x="328" y="176" width="528" height="360" fill="none" stroke="#e5e2dd"/>
+  <text x="328" y="160" fill="#676767" font-family="Georgia, 'Noto Serif SC', serif" font-size="13" letter-spacing="1.4">ARTICLE · 660PX</text>
+  <rect x="360" y="218" width="360" height="12" fill="#282828"/>
+  <rect x="360" y="260" width="464" height="8" fill="#676767"/>
+  <rect x="360" y="284" width="448" height="8" fill="#676767"/>
+  <rect x="360" y="308" width="420" height="8" fill="#676767"/>
+  <rect x="360" y="356" width="464" height="8" fill="#676767"/>
+  <rect x="360" y="380" width="456" height="8" fill="#676767"/>
+  <rect x="360" y="404" width="392" height="8" fill="#676767"/>
+  <rect x="360" y="460" width="300" height="8" fill="#cfcbc4"/>
+
+  <!-- Sidenote rail -->
+  <rect x="952" y="230" width="176" height="212" fill="none" stroke="#e5e2dd" stroke-dasharray="4 6"/>
+  <text x="952" y="214" fill="#676767" font-family="Georgia, 'Noto Serif SC', serif" font-size="13" letter-spacing="1.4">SIDENOTE</text>
+  <rect x="968" y="256" width="140" height="7" fill="#a3a09a"/>
+  <rect x="968" y="278" width="128" height="7" fill="#a3a09a"/>
+  <rect x="968" y="300" width="136" height="7" fill="#a3a09a"/>
+  <rect x="968" y="322" width="104" height="7" fill="#a3a09a"/>
+  <rect x="968" y="368" width="120" height="7" fill="#cfcbc4"/>
+
+  <!-- Connector from article to note -->
+  <path d="M856 286 L948 286" fill="none" stroke="#0155bf" stroke-width="1.5"/>
+  <circle cx="858" cy="286" r="4.5" fill="#0155bf"/>
+</svg>

@@ -7,10 +7,16 @@ import config from "@/config";
 type Props = {
   hideEditPost?: CollectionEntry<"posts">["data"]["hideEditPost"];
   class?: string;
+  showIcon?: boolean;
   post: CollectionEntry<"posts">;
 };
 
-const { hideEditPost, post, class: className = "" } = Astro.props;
+const {
+  hideEditPost,
+  post,
+  showIcon = true,
+  class: className = "",
+} = Astro.props;
 
 const editPost = config.features.editPost;
 const href = editPost.enabled ? `${editPost.url}${post.filePath}` : "";
@@ -30,7 +36,7 @@ const t = useTranslations(Astro.currentLocale);
         className,
       ]}
     >
-      <IconEdit class="inline-block" />
+      <IconEdit class:list={[showIcon ? "inline-block" : "hidden"]} />
       <span>{t.post.editPage}</span>
     </a>
   )

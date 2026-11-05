@@ -18,12 +18,16 @@ import {
 } from "@shikijs/transformers";
 import { transformerFileName } from "./src/utils/transformers/fileName";
 import { rehypeTableWrapper } from "./src/utils/rehypeTableWrapper";
+import { rehypeSidenotes } from "./src/utils/rehypeSidenotes";
 import config from "./astro-paper.config";
+
+// GitHub Pages serves this project site under /blogs/. Local dev starts at the
+// root instead, so pages are reachable as /posts/... without the prefix.
+const isDev = process.env.NODE_ENV === "development";
 
 export default defineConfig({
   site: config.site.url,
-  // GitHub Pages 项目站点部署在 /blogs/ 子路径下
-  base: "/blogs",
+  base: isDev ? "/" : "/blogs",
   integrations: [
     mdx(),
     sitemap({
@@ -44,7 +48,7 @@ export default defineConfig({
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
       ],
-      rehypePlugins: [rehypeCallouts, rehypeTableWrapper],
+      rehypePlugins: [rehypeCallouts, rehypeTableWrapper, rehypeSidenotes],
     }),
     shikiConfig: {
       themes: { light: "min-light", dark: "night-owl" },

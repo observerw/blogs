@@ -13,7 +13,7 @@ pnpm install
 pnpm dev
 ```
 
-由于配置了 GitHub Pages 的子路径，开发服务器地址是 <http://localhost:4321/blogs/>。
+开发服务器从根路径启动，地址是 <http://localhost:4321/>；生产构建仍会带上 GitHub Pages 的 `/blogs/` 前缀。
 
 常用命令：
 
@@ -59,6 +59,18 @@ featured: false
 ```
 
 正文支持 Markdown、MDX、GFM 表格、提示块（`> [!NOTE]`）和代码高亮。
+
+### 脚注与侧注
+
+用标准 GFM 脚注语法写注释即可：
+
+```md
+LoRA 只训练一个低秩适配器，原始权重保持不变[^1]。
+
+[^1]: 这是脚注内容，也可以放 [链接](https://example.com) 和 `行内代码`。
+```
+
+阅读页会把脚注渲染成 Tufte 风格的**侧注**：宽屏（≥ 1280px）下注释浮动在正文右侧的页边，与引用处在同一水平线上；窄屏下注释收进正文，点击引用编号展开。实现见 `src/utils/rehypeSidenotes.js`，版式见 `src/styles/post.css`。
 
 ## 部署
 

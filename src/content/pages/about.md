@@ -13,4 +13,4 @@ description: "关于 observerw 和这个博客。"
 - 内容：Markdown / MDX，内置文章列表、标签页与按时间归档
 - 搜索：Pagefind 静态全文搜索
 - 部署：GitHub Actions → GitHub Pages
-- 源码：[observerw/blogs](https://github.com/observerw/blogs)，欢迎通过 [RSS](/blogs/rss.xml) 订阅
+- 源码：[observerw/blogs](https://github.com/observerw/blogs)，欢迎通过 [RSS](../rss.xml) 订阅

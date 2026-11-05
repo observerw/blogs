@@ -31,19 +31,19 @@ const items = await Promise.all(
 
 {
   items.some(({ Icon }) => Icon) && (
-    <div class="flex flex-none flex-col items-center justify-center gap-1 md:items-start">
-      <span class="italic">{t.post.sharePostIntro}</span>
-      <div class="text-center">
+    <div class="flex flex-none items-center gap-2">
+      <span class="share-label">{t.post.sharePostIntro}</span>
+      <div class="flex items-center">
         {items.map(({ url, title, Icon }) =>
           Icon ? (
             <LinkButton
               href={`${url}${pageUrl}`}
-              class="scale-90 p-2 hover:rotate-6 sm:p-1"
+              class="hover:text-accent p-1.5"
               title={title}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Icon class="inline-block size-6 scale-125 fill-transparent stroke-current stroke-2 opacity-90 group-hover:fill-transparent sm:scale-110" />
+              <Icon class="inline-block size-4 stroke-current" />
               <span class="sr-only">{title}</span>
             </LinkButton>
           ) : null
