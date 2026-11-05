@@ -1,4 +1,5 @@
 ---
+import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
 import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
 import { getAssetPath } from "@/utils/withBase";
@@ -37,6 +38,9 @@ const rssHref = getAssetPath("rss.xml");
     <link rel="icon" type="image/svg+xml" href={getAssetPath("favicon.svg")} />
     <link rel="canonical" href={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
+
+    <!-- Fonts: Chinese -->
+    <Font cssVariable="--font-noto-serif-sc" />
 
     <!-- Primary meta -->
     <title>{title}</title>

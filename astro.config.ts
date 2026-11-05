@@ -1,4 +1,9 @@
-import { defineConfig, envField, svgoOptimizer } from "astro/config";
+import {
+  defineConfig,
+  envField,
+  fontProviders,
+  svgoOptimizer,
+} from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
@@ -56,6 +61,19 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  fonts: [
+    {
+      // 中文：思源宋体的 Google 版本 Noto Serif SC
+      name: "Noto Serif SC",
+      cssVariable: "--font-noto-serif-sc",
+      provider: fontProviders.fontsource(),
+      weights: [400, 600, 700],
+      styles: ["normal"],
+      subsets: ["chinese-simplified", "latin"],
+      formats: ["woff2"],
+      fallbacks: [],
+    },
+  ],
   env: {
     schema: {
       PUBLIC_GOOGLE_SITE_VERIFICATION: envField.string({
