@@ -1,0 +1,160 @@
+---
+title: "使用 k8s 部署云原生 EDA 集群"
+pubDatetime: 2026-11-05T18:00:00+08:00
+description: "在课题组 H200 服务器集群上用 Kubernetes 部署云原生 EDA 工具链的记录。"
+tags: ["EDA", "Kubernetes", "Cloud Native"]
+draft: false
+featured: false
+---
+
+# 背景
+
+课题组提供了一个服务器集群，包含 11 台服务器，我早早就在其上部署好了 k8s。虽然主要是用来做 GPU 相关工作的，但其他硬件资源其实也非常充足：
+
+- CPU：2 x Intel Xeon Platinum 8558P，共计 96 核心 192 线程，主频 2.70 GHz
+- 内存：32 × 64 GB DDR5，共计 2 TB
+- 存储：4 × 7 TB NVMe Memblaze P6531DT
+- 共享存储：101 TB GPFS 挂载
+- 操作系统：Ubuntu 22.04.5 LTS
+
+可以看出虽然 CPU 单核性能不算顶尖，但胜在数量众多，而且内存和存储等资源也非常够用；因此非常适合用来大规模并行跑中小型 RTL 设计的 EDA 综合仿真等流程。
+
+对传统芯片设计工作流程来说这种特性基本上没什么用（没有团队会同时开发几万款芯片且需要一起跑仿真），但对于 Agentic EDA 来说是完美适配的：想要通过 Agentic RL 训练专用于芯片设计的 Agent，那么环境的 scale up 就是不可绕过的需求。
+
+为此，把 EDA 工具链部署到 k8s 上来构建 Cloud Native EDA 集群是非常有必要的。
+
+# EDA 工具的镜像构建
+
+## 基础环境
+
+采用多阶段构建时，构建阶段基础镜像：
+
+```dockerfile file=Dockerfile.build
+
+ARG ALMA=almalinux:8.10
+FROM ${ALMA}
+
+# 换国内 dnf 源
+RUN sed -i -e 's|^mirrorlist=|#mirrorlist=|' \
+           -e 's|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.cloud.tencent.com|' \
+           /etc/yum.repos.d/almalinux.repo
+
+RUN dnf -y --disablerepo='*' --enablerepo=baseos,appstream \
+        --setopt=install_weak_deps=False install \
+        perl gcc glibc-devel make binutils bash tcsh \
+        tar gzip bzip2 xz unzip cpio file patch \
+        procps-ng \
+ && dnf clean all
+
+COPY SynopsysInstaller_v5.10.run /tmp/
+RUN perl /tmp/SynopsysInstaller_v5.10.run -dir /opt/synopsys-installer > /dev/null \
+ && test -x /opt/synopsys-installer/batch_installer \
+ && rm -f /tmp/SynopsysInstaller_v5.10.run
+
+# 如果需要一些神秘小工具的话应当补充到这里；出于安全考虑这里就不写明了
+
+ENV SI_ACCEPT_LICENSE=1
+```
+
+并且，所有的 EDA 工具容器基本上都要一些基础的运行环境，因此可以提供一个通用的运行时基础镜像，供后续的 EDA 工具镜像产物继承：
+
+```dockerfile file=Dockerfile.runtime
+ARG ALMA=almalinux:8.10
+FROM ${ALMA}
+
+RUN sed -i -e 's|^mirrorlist=|#mirrorlist=|' \
+           -e 's|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.cloud.tencent.com|' \
+           /etc/yum.repos.d/almalinux.repo
+
+RUN dnf -y --disablerepo='*' --enablerepo=baseos,appstream \
+        --setopt=install_weak_deps=False install \
+        glibc glibc-langpack-en libgcc libstdc++ libgomp \
+        zlib ncurses ncurses-libs readline \
+        nss nspr nss-util krb5-libs openssl-libs \
+        libX11 libXext libXft libXrender libXi libXtst libXrandr \
+        libXau libXdmcp libXcomposite libXdamage libXcursor libXfixes \
+        libXt libXmu libXpm libXScrnSaver \
+        libSM libICE \
+        mesa-libGL libglvnd-glx libglvnd-egl libdrm \
+        fontconfig freetype graphite2 \
+        alsa-lib pciutils-libs libaio libnsl numactl-libs \
+        tcsh ksh bash which findutils procps-ng util-linux \
+        iproute hostname tzdata ca-certificates \
+ && dnf clean all
+
+RUN mkdir -p /opt/synopsys /work
+
+# TODO 注意这里的 host 和 port 根据实际情况修改
+ENV LANG=en_US.UTF-8 \
+    SNPSLMD_LICENSE_FILE=<port>@<host> \
+    LM_LICENSE_FILE=<port>@<host> 
+
+WORKDIR /work
+```
+
+## SCL
+
+```sh file=entrypoint.sh
+#!/bin/sh
+set -e
+
+# TODO 注意根据实际情况修改 mac_address、lic1、port 和 host
+ip link set eth0 address <mac_address>
+echo '127.0.0.1 <host>' >> /etc/hosts
+export LD_PRELOAD=/opt/synopsys/scl/2025.03/linux64/bin/snpslmd-hack.so
+
+# lmgrd/snpslmd run as root: the 2025.03 vendor daemon dies with
+# "free(): invalid pointer" when dropped to uid 1001, unlike the 2024.06 one.
+# PID 1 stays this shell so the daemons run with the container's capabilities.
+lmgrd -z -c /opt/synopsys/scl/2025.03/admin/license/license.dat &
+wait
+```
+
+```dockerfile file=Dockerfile.scl
+ARG BUILD_IMAGE=local.io/synopsys/eda-build:8.10
+
+FROM ${BUILD_IMAGE} AS build
+
+COPY scl_v2025.03_common.spf scl_v2025.03_linux64.spf /tmp/src/
+COPY snpslmd-hack.c /tmp/
+
+RUN gcc -shared -fPIC -O2 -o /tmp/snpslmd-hack.so /tmp/snpslmd-hack.c -ldl
+
+RUN /opt/synopsys-installer/batch_installer -allprods -source /tmp/src \
+        -target /opt/synopsys -install_as_root > /tmp/install.log 2>&1; \
+    rc=$?; tail -20 /tmp/install.log; echo "install_rc=$rc"; \
+    test -x /opt/synopsys/scl/2025.03/linux64/bin/lmutil
+```
+
+## 工具，以 VCS 为例
+
+
+# 部署到集群中
+
+## License Server
+
+我猜你大概应该不想让 license server 能够直接暴露到公网然后让 Synopsys 给你开了盒，所以你应当配置好网络策略，只向集群内部提供 license 认证，而无法主动访问外部网络：
+
+```yaml file=license-networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: license-isolation
+  namespace: eda
+  labels:
+    app: license
+spec:
+  podSelector:
+    matchLabels:
+      app: license
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 2700
+        - protocol: TCP
+          port: 2701
+  egress: []
+```

@@ -233,6 +233,14 @@
   color: var(--foreground);
 }
 
+/* 中文正文两端对齐；直接写在 li 上的列表文字也一并处理 */
+#article p,
+#article li,
+#article dd {
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
 #article h1,
 #article h2,
 #article h3,
@@ -350,6 +358,17 @@
   color: var(--muted-foreground);
   font-size: 0.8125rem;
   line-height: 1.6;
+}
+
+#article .katex-display {
+  margin: 1.6rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-block: 0.25rem;
+}
+
+#article .katex {
+  font-size: 1.05em;
 }
 
 #article :not(pre) > code {

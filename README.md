@@ -35,7 +35,7 @@ pnpm dev
 └── src/
     ├── content/
     │   ├── posts/          # 文章
-    │   └── pages/about.md  # 关于页
+    │   └── pages/about.mdx # 关于页
     ├── i18n/lang/          # 界面文案（zh-CN）
     ├── pages/              # 路由：首页、文章、标签、归档、搜索
     └── styles/             # 主题与排版样式
@@ -43,9 +43,9 @@ pnpm dev
 
 ## 写文章
 
-在 `src/content/posts/` 下新建 Markdown 文件，文件名为 URL slug：
+在 `src/content/posts/` 下新建 `.mdx` 文件，文件名为 URL slug：
 
-```md
+```mdx
 ---
 title: "文章标题"
 pubDatetime: 2026-11-05T18:00:00+08:00
@@ -59,6 +59,24 @@ featured: false
 ```
 
 正文支持 Markdown、MDX、GFM 表格、提示块（`> [!NOTE]`）和代码高亮。
+
+### 附件
+
+图片和文本附件放在 `src/assets/attachments/<文章 slug>/`，在文章里 import。不要放进 `public/`，也不要放进 `src/content/posts/`（那里的 `.md` 会被当成文章，构建直接失败）。
+
+```mdx
+import { Image } from "astro:assets";
+import shot from "@attach/my-post/screenshot.png";
+import output from "@attach/my-post/output.log?url&no-inline";
+
+<Image src={shot} alt="截图" width={800} />
+
+<a href={output} download="output.log">
+  下载完整日志
+</a>
+```
+
+`@attach/*` 指向 `src/assets/attachments/`，见 `tsconfig.json`。图片会自动转 webp，文件名带内容 hash，并自动加上 `/blogs` 前缀。文本附件要用 `?url&no-inline` 才会生成真实 URL，否则小于 4 KB 的文件会被内联成 base64；`.md`、`.log` 这类扩展名必须带 `?url`，否则会被当成 JS 解析而导致构建失败。
 
 ### 脚注与侧注
 

@@ -4,6 +4,7 @@
 @import "./typography.css";
 @import "./post.css";
 @import "rehype-callouts/theme/obsidian";
+@import "katex/dist/katex.min.css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
