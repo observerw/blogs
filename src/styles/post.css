@@ -373,6 +373,21 @@ html[data-theme="dark"] #article :not(pre) > code {
   line-height: 1.65;
 }
 
+/* Soft-wrap long code lines instead of scrolling horizontally. `anywhere` also
+   shrinks the min-content width, so the flex code element can actually shrink
+   inside the Shiki pre. */
+#article pre,
+#article pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Let the code element shrink inside the Shiki pre flex container. */
+#article pre code {
+  min-width: 0;
+}
+
 /* The copy button is absolutely positioned inside this wrapper. */
 .code-block-copy-wrapper {
   position: relative;
