@@ -1,0 +1,126 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+const samples = [
+  {
+    label: "Noto Serif SC",
+    cn: "思源宋体（当前）",
+    note: "宋体 · 书籍感，但与无衬线西文不属于同一类",
+    stack: `var(--font-noto-serif-sc), "Songti SC", serif`,
+  },
+  {
+    label: "LXGW WenKai",
+    cn: "霞鹜文楷",
+    note: "楷体 · 笔画带书写感，最接近 Libertinus Sans 的人文主义根源",
+    stack: `"LXGW WenKai", var(--font-noto-serif-sc), serif`,
+  },
+  {
+    label: "LXGW WenKai Screen",
+    cn: "霞鹜文楷屏幕阅读版",
+    note: "楷体 · 稍加粗并调整度量，屏幕小字更清晰（仅 400 一档字重）",
+    stack: `"LXGW WenKai Screen", var(--font-noto-serif-sc), serif`,
+  },
+  {
+    label: "Noto Sans SC",
+    cn: "思源黑体",
+    note: "黑体 · 同为无衬线，但笔画更现代、更中性",
+    stack: `"Noto Sans SC", var(--font-noto-serif-sc), sans-serif`,
+  },
+];
+---
+
+<Layout
+  title="中文字体对比"
+  description="Libertinus Sans 搭配不同中文字体的效果对比。"
+>
+  <meta slot="head" name="robots" content="noindex" />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css"
+  />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css"
+  />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.7.0/lxgwwenkaiscreen.css"
+  />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.1/400.css"
+  />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.1/600.css"
+  />
+  <link
+    slot="head"
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.3.1/700.css"
+  />
+
+  <main class="app-layout my-10 flex-1">
+    <h1 class="text-2xl font-semibold sm:text-3xl">中文字体对比</h1>
+    <p class="text-muted-foreground mt-2 text-sm">
+      西文固定为 Libertinus Sans，只替换中文部分。正文 17px / 行高
+      1.8，与阅读页一致。
+    </p>
+
+    <div class="mt-10 space-y-12">
+      {
+        samples.map(sample => (
+          <section
+            class="border-border rounded-lg border p-6"
+            style={`font-family: "Libertinus Sans", ${sample.stack};`}
+          >
+            <header class="border-border mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b pb-3">
+              <span class="text-foreground text-sm font-semibold">
+                {sample.cn}
+                <span class="text-muted-foreground ml-2 font-normal">
+                  {sample.label}
+                </span>
+              </span>
+              <span class="text-muted-foreground text-xs">{sample.note}</span>
+            </header>
+
+            <h2 class="text-[1.625rem] leading-[1.45] font-semibold">
+              博客排版效果一览
+            </h2>
+
+            <p class="mt-4 text-[17px] leading-[1.8]">
+              {sample.label === "Noto Serif SC" ? "（当前正在使用）" : ""}
+              这是一篇排版测试文章。它不讨论具体技术，只把博客目前支持的
+              Markdown
+              元素依次摆出来，方便检查字号、行距、间距和颜色在真实内容里的表现。
+            </p>
+
+            <p class="mt-4 text-[17px] leading-[1.8]">
+              阅读页的正文栏宽是 660px，大约每行容纳 38
+              个汉字。这个宽度接近书籍的单栏排版，视线从行尾回到下一行行首时不容易串行。
+            </p>
+
+            <p class="mt-4 text-[17px] leading-[1.8]">
+              正文使用 <strong class="font-bold">加粗</strong> 表示重点，用{" "}
+              <em>斜体</em> 表示书名或术语，行内代码写成{" "}
+              <code class="bg-muted rounded px-1.5 py-0.5 text-[0.9em]">
+                npm run build
+              </code>
+              ，链接可以直接写在句子里，例如 Astro 的 Markdown 文档。 Libertinus
+              Sans 与中文混排时，西文字形偏人文主义，笔画略带书写味。
+            </p>
+
+            <p class="text-muted-foreground mt-5 text-[13px] leading-[1.6]">
+              2026 年 11 月 5 日 · 写作 · 演示 —— 小字号下的清晰度（13px）
+            </p>
+          </section>
+        ))
+      }
+    </div>
+  </main>
+</Layout>

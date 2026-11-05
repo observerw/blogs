@@ -1,5 +1,10 @@
 /* Self-hosted Libertinus Sans (SIL OFL 1.1) for Latin text.
-   Noto Serif SC / Source Han Serif is loaded through the Astro Fonts API. */
+   LXGW WenKai (SIL OFL 1.1) provides the simplified-Chinese glyphs, split into
+   unicode-range subsets so a page only downloads the chunks it actually uses.
+   Noto Serif SC / Source Han Serif is loaded through the Astro Fonts API and
+   stays as the fallback for any glyph WenKai does not cover. */
+@import "lxgw-wenkai-webfont/lxgwwenkai-regular.css";
+@import "lxgw-wenkai-webfont/lxgwwenkai-bold.css";
 
 /* latin-ext normal 400 */
 @font-face {

@@ -8,8 +8,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --font-app:
-    "Libertinus Sans", var(--font-noto-serif-sc), "Source Han Serif SC",
-    "Songti SC", "SimSun", serif;
+    "Libertinus Sans", "LXGW WenKai", var(--font-noto-serif-sc),
+    "Source Han Serif SC", "Songti SC", "SimSun", serif;
   --font-code:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
