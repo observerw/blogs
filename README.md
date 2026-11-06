@@ -35,6 +35,7 @@ pnpm dev
 └── src/
     ├── content/
     │   ├── posts/          # 文章
+    │   ├── references.bib  # 参考文献库，文章里用 [@citekey] 引用
     │   └── pages/about.mdx # 关于页
     ├── i18n/lang/          # 界面文案（zh-CN）
     ├── pages/              # 路由：首页、文章、标签、归档、搜索
@@ -101,6 +102,17 @@ LoRA 只训练一个低秩适配器，原始权重保持不变[^1]。
 ```
 
 阅读页会把脚注渲染成 Tufte 风格的**侧注**：宽屏（≥ 1280px）下注释浮动在正文右侧的页边，与引用处在同一水平线上；窄屏下注释收进正文，点击引用编号展开。实现见 `src/utils/rehypeSidenotes.js`，版式见 `src/styles/post.css`。
+
+### 引用文献
+
+参考文献统一放在 `src/content/references.bib`，正文里用 `[@citekey]` 引用，一个标记里可以并列多个键：
+
+```md
+Tufte 把页边注释当成版面的一部分[@tufte1990]。
+字形和页边可以分开讨论[@bringhurst2004; @knuth1984]。
+```
+
+引用渲染成脚注，和手写的 `[^1]` 共用同一套编号，宽屏下也同样浮动在右侧页边。条目按「作者. 标题. 出处, 年份」的固定顺序拼出来，有 `doi` 或 `url` 字段时附在末尾作为链接；键名写错会在构建时直接报错。实现见 `src/utils/remarkCitations.js`，文献库路径是 `astro.config.ts` 里 `remarkCitations` 的 `bibliography` 选项。
 
 ## 部署
 

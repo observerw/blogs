@@ -22,6 +22,7 @@ import {
 import { transformerFileName } from "./src/utils/transformers/fileName";
 import { rehypeTableWrapper } from "./src/utils/rehypeTableWrapper";
 import { rehypeSidenotes } from "./src/utils/rehypeSidenotes";
+import { remarkCitations } from "./src/utils/remarkCitations";
 import config from "./astro-paper.config";
 
 // GitHub Pages serves this project site under /blogs/. Local dev starts at the
@@ -64,6 +65,9 @@ export default defineConfig({
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
         remarkMath,
+        // `[@citekey]` becomes a footnote, which rehypeSidenotes floats into
+        // the margin on wide screens.
+        [remarkCitations, { bibliography: "src/content/references.bib" }],
       ],
       rehypePlugins: [
         rehypeCallouts,
