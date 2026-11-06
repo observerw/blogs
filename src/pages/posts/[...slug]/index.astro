@@ -15,6 +15,8 @@ import CopyMarkdown from "./_components/CopyMarkdown.astro";
 import BackButton from "./_components/BackButton.astro";
 import BackToTopButton from "./_components/BackToTopButton.astro";
 import AdjacentPostNav from "./_components/AdjacentPostNav.astro";
+import IconArrowNarrowUp from "@/assets/icons/IconArrowNarrowUp.svg";
+import { useTranslations } from "@/i18n";
 import config from "@/config";
 
 export async function getStaticPaths() {
@@ -61,6 +63,7 @@ type Props = {
 
 const { post, prevPost, nextPost } = Astro.props;
 const locale = Astro.currentLocale ?? config.site.lang;
+const t = useTranslations(locale);
 
 const {
   title,
@@ -156,15 +159,21 @@ const markdownURL = new URL(markdownPath, Astro.url).href;
     <div class="post-shell">
       {
         tocHeadings.length > 0 && (
-          <nav class="post-toc" aria-label="目录">
-            <ul>
-              {tocHeadings.map(heading => (
-                <li class:list={[`toc-depth-${heading.depth}`]}>
-                  <a href={`#${heading.slug}`}>{heading.text}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <div class="post-toc-rail">
+            <nav class="post-toc" aria-label="目录">
+              <ul>
+                {tocHeadings.map(heading => (
+                  <li class:list={[`toc-depth-${heading.depth}`]}>
+                    <a href={`#${heading.slug}`}>{heading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <a class="post-toc-top" href="#top">
+              <IconArrowNarrowUp class="size-3.5" />
+              {t.post.backToTop}
+            </a>
+          </div>
         )
       }
 

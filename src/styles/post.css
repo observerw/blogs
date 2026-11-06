@@ -133,23 +133,32 @@
 
 /* ----- Table of contents -------------------------------------------------- */
 
-.post-toc {
+.post-toc-rail {
   grid-column: 1;
   justify-self: end;
   align-self: start;
   position: sticky;
   top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
   width: 200px;
   max-height: calc(100vh - 4rem);
   margin-right: 28px;
-  padding: 0.2rem 0 0.2rem 1rem;
+}
+
+.post-toc {
+  flex: 0 1 auto;
+  min-height: 0;
+  padding: 0.2rem 1rem 0.2rem 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
   color: var(--muted-foreground);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.55;
   letter-spacing: 0.01em;
+  text-align: right;
 }
 
 .post-toc::-webkit-scrollbar {
@@ -164,14 +173,24 @@
 
 .post-toc li {
   position: relative;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.5rem;
+}
+
+/* Each h2 opens a new block, so give its first entry extra air. Sub-entries
+   (h3) stay tighter and step in from the right edge the rail is aligned to. */
+.post-toc .toc-depth-2 {
+  margin-top: 1.15rem;
+}
+
+.post-toc .toc-depth-2:first-child {
+  margin-top: 0;
 }
 
 .post-toc li::before {
   content: "";
   position: absolute;
   top: 0.5em;
-  left: -1rem;
+  right: -1rem;
   width: 4px;
   height: 4px;
   border-radius: 50%;
@@ -196,16 +215,37 @@
   opacity: 1;
 }
 
-.post-toc .toc-depth-3 a {
-  padding-left: 0.8rem;
+.post-toc .toc-depth-3 {
+  margin-bottom: 0.35rem;
 }
 
-.post-toc .toc-depth-3::before {
-  left: -1rem;
+.post-toc .toc-depth-3 a {
+  padding-right: 1.6rem;
+  font-size: 0.8125rem;
+  font-style: italic; /* mirrors how h3 reads in the article */
+  line-height: 1.4;
+}
+
+.post-toc-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.15rem;
+  padding-right: 1rem;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.post-toc-top:hover {
+  color: var(--foreground);
 }
 
 @media (max-width: 1279px) {
-  .post-toc {
+  .post-toc-rail {
     display: none;
   }
 
