@@ -24,6 +24,7 @@
     "@astrojs/sitemap": "^3.7.4",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.2",
+    "bibtex-parse-js": "^0.0.24",
     "copy-text-to-clipboard": "^3.2.2",
     "dayjs": "^1.11.23",
     "katex": "^0.19.1",

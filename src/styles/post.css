@@ -590,6 +590,19 @@ html[data-theme="dark"] #article .callout-title {
   text-decoration: none;
 }
 
+/* Two markers in a row (`……[@a; @b]`) are separate notes, so they need a
+   separator. Drawn here instead of in the text, so the comma keeps the
+   superscript size and position of the numbers. It hugs the number before it
+   and takes the spacing on its right, like "4,5". */
+.sidenote-group + .sidenote-group > .sidenote-ref {
+  margin-left: 0;
+}
+
+.sidenote-group + .sidenote-group > .sidenote-ref::before {
+  content: ",";
+  margin-right: 0.12em;
+}
+
 .sidenote-toggle {
   position: absolute;
   width: 1px;
