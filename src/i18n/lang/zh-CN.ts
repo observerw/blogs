@@ -21,6 +21,11 @@ export default {
     editPage: "编辑页面",
     previousPost: "上一篇",
     nextPost: "下一篇",
+    copyMarkdown: "复制 Markdown",
+    copyMarkdownTitle: "复制这篇博客的 Markdown 原文，便于粘贴给 AI 工具",
+    copyMarkdownUnavailable: "构建后可用",
+    copied: "已复制",
+    copyFailed: "复制失败",
   },
   pagination: {
     prev: "上一页",

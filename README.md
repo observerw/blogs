@@ -41,6 +41,18 @@ pnpm dev
     └── styles/             # 主题与排版样式
 ```
 
+## AI 与 Markdown
+
+站点使用 [`astro-llms-md`](https://github.com/tfmurad/astro-llms-md) 在构建时生成 AI 友好的内容：
+
+- `/llms.txt`：全站文章索引，遵循 [llms.txt 规范](https://llmstxt.org/)
+- `/llms-full.txt`：所有页面正文合并成一个大文件
+- `/posts/<slug>.md`：每篇文章对应的纯 Markdown 版本
+
+文章底部的「复制 Markdown」按钮会直接取对应的 `.md` 文件写入剪贴板。页面的 `<head>` 里也有 `rel="alternate" type="text/markdown"` 和 `rel="describedby"` 链接，方便人和 Agent 发现这些文件。`robots.txt` 同样指向 `llms.txt`。
+
+`llms.txt`、`llms-full.txt` 和构建产物里的 `.md` 都在 `astro build` 之后生成。开发模式下 `src/middleware.ts` 会按需渲染文章，并复用 `astro-llms-md` 自带的 HTML→Markdown 转换器，所以 `/posts/<slug>.md` 和「复制 Markdown」按钮在 `pnpm dev` 下也能直接使用；`llms.txt` / `llms-full.txt` 仍以构建产物为准。生成选项（站点名、简介、选择器、排除页面）在 `astro.config.ts` 的 `llms()` 调用里，开发中间件复用同一组选择器。
+
 ## 写文章
 
 在 `src/content/posts/` 下新建 `.mdx` 文件，文件名为 URL slug：

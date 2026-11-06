@@ -7,6 +7,7 @@ import {
 import tailwindcss from "@tailwindcss/vite";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
+import llms from "astro-llms-md";
 import { unified } from "@astrojs/markdown-remark";
 import remarkToc from "remark-toc";
 import remarkCollapse from "remark-collapse";
@@ -35,6 +36,19 @@ export default defineConfig({
     sitemap({
       filter: page =>
         config.features?.showArchives !== false || !/\/archives\/?$/.test(page),
+    }),
+    // Generate /llms.txt, /llms-full.txt and one .md file per page after build,
+    // so readers and AI agents can consume the posts as plain Markdown.
+    llms({
+      siteUrl: config.site.url,
+      name: "旧事重提",
+      description: "工程实践、技术原理和阅读笔记",
+      titleSelector: "h1",
+      contentSelector: "#article",
+      // KaTeX renders each formula twice (visual HTML + MathML with the TeX
+      // source). Keeping only the MathML lets the export retain the formula.
+      excludeSelectors: [".katex-html", ".katex-mathml mrow"],
+      exclude: ["404", "search", "font-preview", "tags", "posts/[0-9]*/**"],
     }),
   ],
   i18n: {

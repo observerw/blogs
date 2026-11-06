@@ -1,0 +1,69 @@
+---
+import { useTranslations } from "@/i18n";
+
+type Props = {
+  href: string;
+};
+
+const { href } = Astro.props;
+const t = useTranslations(Astro.currentLocale);
+---
+
+<button
+  type="button"
+  class="hover:text-accent inline-flex flex-none items-center gap-1.5 p-1.5 text-xs"
+  title={t.post.copyMarkdownTitle}
+  data-copy-markdown
+  data-markdown-url={href}
+  data-idle-label={t.post.copyMarkdown}
+  data-copied-label={t.post.copied}
+  data-unavailable-label={t.post.copyMarkdownUnavailable}
+  data-failed-label={t.post.copyFailed}
+>
+  <span data-copy-markdown-label aria-live="polite">{t.post.copyMarkdown}</span>
+</button>
+
+<script>
+  import copy from "copy-text-to-clipboard";
+
+  // astro-llms-md writes one .md file per page after `astro build`, so copying
+  // is a plain fetch of a static file instead of client-side HTML->MD work.
+  // The document-level listener survives <ClientRouter> navigations.
+  document.addEventListener("click", async event => {
+    if (!(event.target instanceof Element)) return;
+
+    const button = event.target.closest<HTMLElement>("[data-copy-markdown]");
+    if (!button) return;
+    event.preventDefault();
+
+    const label = button.querySelector<HTMLElement>(
+      "[data-copy-markdown-label]"
+    );
+    const url = button.dataset.markdownUrl;
+    if (!label || !url) return;
+
+    const reset = () => {
+      window.setTimeout(() => {
+        label.textContent = button.dataset.idleLabel ?? "";
+      }, 2000);
+    };
+
+    let markdown: string;
+    try {
+      const response = await fetch(url, {
+        headers: { Accept: "text/markdown" },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      markdown = await response.text();
+    } catch {
+      label.textContent = button.dataset.unavailableLabel ?? "";
+      reset();
+      return;
+    }
+
+    label.textContent = copy(markdown)
+      ? (button.dataset.copiedLabel ?? "")
+      : (button.dataset.failedLabel ?? "");
+    reset();
+  });
+</script>

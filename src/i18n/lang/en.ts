@@ -21,6 +21,11 @@ export default {
     editPage: "Edit page",
     previousPost: "Previous Post",
     nextPost: "Next Post",
+    copyMarkdown: "Copy Markdown",
+    copyMarkdownTitle: "Copy this post as Markdown for AI tools",
+    copyMarkdownUnavailable: "Available after build",
+    copied: "Copied",
+    copyFailed: "Copy failed",
   },
   pagination: {
     prev: "Prev",

@@ -11,6 +11,7 @@ type Props = {
   description?: string;
   ogImage?: string;
   canonicalURL?: string;
+  markdownURL?: string;
 };
 
 const { site } = config;
@@ -20,10 +21,12 @@ const {
   description = site.description,
   ogImage = resolveDefaultOgImagePath(config),
   canonicalURL = new URL(Astro.url.pathname, Astro.site).href,
+  markdownURL,
 } = Astro.props;
 
 const socialImageURL = new URL(ogImage, Astro.site ?? Astro.url);
 const rssHref = getAssetPath("rss.xml");
+const llmsHref = new URL(getAssetPath("llms.txt"), Astro.site ?? Astro.url);
 ---
 
 <!doctype html>
@@ -71,6 +74,19 @@ const rssHref = getAssetPath("rss.xml");
       title={site.title}
       href={new URL(rssHref, Astro.site)}
     />
+
+    <!-- AI / Markdown discovery (https://llmstxt.org) -->
+    {
+      markdownURL && (
+        <link
+          rel="alternate"
+          type="text/markdown"
+          title="Markdown"
+          href={markdownURL}
+        />
+      )
+    }
+    <link rel="describedby" type="text/markdown" href={llmsHref} />
 
     <!-- Filled at runtime by theme.ts to match the current background colour -->
     <meta name="theme-color" content="" />

@@ -11,6 +11,7 @@ import { slugifyStr } from "@/utils/slugify";
 import { toTransitionName } from "@/utils/toTransitionName";
 import EditPost from "./_components/EditPost.astro";
 import ShareLinks from "./_components/ShareLinks.astro";
+import CopyMarkdown from "./_components/CopyMarkdown.astro";
 import BackButton from "./_components/BackButton.astro";
 import BackToTopButton from "./_components/BackToTopButton.astro";
 import AdjacentPostNav from "./_components/AdjacentPostNav.astro";
@@ -99,6 +100,12 @@ if (!ogImageUrl && config.features.dynamicOgImage) {
 const ogImage = ogImageUrl
   ? new URL(ogImageUrl, Astro.url.origin).href
   : undefined;
+
+// astro-llms-md emits one Markdown file per page after build: /posts/<slug>.md
+// Keep a root-relative path for the copy button (works on any preview origin)
+// and an absolute URL for the <link rel="alternate"> in <head>.
+const markdownPath = `${getPostUrl(post.id, post.filePath, locale).replace(/\/$/, "")}.md`;
+const markdownURL = new URL(markdownPath, Astro.url).href;
 ---
 
 <PostLayout
@@ -106,6 +113,7 @@ const ogImage = ogImageUrl
   description={description}
   ogImage={ogImage}
   canonicalURL={canonicalURL}
+  {markdownURL}
   pubDatetime={pubDatetime}
   modDatetime={modDatetime}
 >
@@ -182,7 +190,10 @@ const ogImage = ogImageUrl
 
       <div class="post-actions" data-pagefind-ignore>
         <EditPost class="sm:hidden" {hideEditPost} {post} showIcon={false} />
-        <ShareLinks />
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <CopyMarkdown href={markdownPath} />
+          <ShareLinks />
+        </div>
         <BackToTopButton />
       </div>
 

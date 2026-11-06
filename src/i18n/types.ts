@@ -19,6 +19,11 @@ export interface UIStrings {
     editPage: string;
     previousPost: string;
     nextPost: string;
+    copyMarkdown: string;
+    copyMarkdownTitle: string;
+    copyMarkdownUnavailable: string;
+    copied: string;
+    copyFailed: string;
   };
   pagination: {
     prev: string;
