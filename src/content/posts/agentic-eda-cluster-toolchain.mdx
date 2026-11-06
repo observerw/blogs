@@ -1,0 +1,130 @@
+---
+title: "云原生 Agentic EDA 集群管理：EDA 工具链"
+pubDatetime: 2026-11-05T18:00:00+08:00
+description: "在 Kubernetes 上部署云原生 EDA 工具链"
+tags: ["EDA", "Kubernetes", "Cloud Native"]
+draft: false
+featured: false
+---
+
+# EDA 工具的镜像构建
+
+## 基础环境
+
+采用多阶段构建时，构建阶段基础镜像：
+
+```dockerfile file=Dockerfile.build
+
+ARG ALMA=almalinux:8.10
+FROM ${ALMA}
+
+# 换国内 dnf 源
+RUN sed -i -e 's|^mirrorlist=|#mirrorlist=|' \
+           -e 's|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.cloud.tencent.com|' \
+           /etc/yum.repos.d/almalinux.repo
+
+RUN dnf -y --disablerepo='*' --enablerepo=baseos,appstream \
+        --setopt=install_weak_deps=False install \
+        perl gcc glibc-devel make binutils bash tcsh \
+        tar gzip bzip2 xz unzip cpio file patch \
+        procps-ng \
+ && dnf clean all
+
+COPY SynopsysInstaller_v5.10.run /tmp/
+RUN perl /tmp/SynopsysInstaller_v5.10.run -dir /opt/synopsys-installer > /dev/null \
+ && test -x /opt/synopsys-installer/batch_installer \
+ && rm -f /tmp/SynopsysInstaller_v5.10.run
+
+# 如果需要一些神秘小工具的话应当补充到这里；出于安全考虑这里就不写明了
+
+ENV SI_ACCEPT_LICENSE=1
+```
+
+并且，所有的 EDA 工具容器基本上都要一些基础的运行环境，因此可以提供一个通用的运行时基础镜像，供后续的 EDA 工具镜像产物继承：
+
+```dockerfile file=Dockerfile.runtime
+ARG ALMA=almalinux:8.10
+FROM ${ALMA}
+
+RUN sed -i -e 's|^mirrorlist=|#mirrorlist=|' \
+           -e 's|^# baseurl=https://repo.almalinux.org|baseurl=https://mirrors.cloud.tencent.com|' \
+           /etc/yum.repos.d/almalinux.repo
+
+RUN dnf -y --disablerepo='*' --enablerepo=baseos,appstream \
+        --setopt=install_weak_deps=False install \
+        glibc glibc-langpack-en libgcc libstdc++ libgomp \
+        zlib ncurses ncurses-libs readline \
+        nss nspr nss-util krb5-libs openssl-libs \
+        libX11 libXext libXft libXrender libXi libXtst libXrandr \
+        libXau libXdmcp libXcomposite libXdamage libXcursor libXfixes \
+        libXt libXmu libXpm libXScrnSaver \
+        libSM libICE \
+        mesa-libGL libglvnd-glx libglvnd-egl libdrm \
+        fontconfig freetype graphite2 \
+        alsa-lib pciutils-libs libaio libnsl numactl-libs \
+        tcsh ksh bash which findutils procps-ng util-linux \
+        iproute hostname tzdata ca-certificates \
+ && dnf clean all
+
+RUN mkdir -p /opt/synopsys /work
+
+# TODO 注意这里的 host 和 port 根据实际情况修改
+ENV LANG=en_US.UTF-8 \
+    SNPSLMD_LICENSE_FILE=<port>@<host> \
+    LM_LICENSE_FILE=<port>@<host> 
+
+WORKDIR /work
+```
+
+## SCL
+
+```sh file=entrypoint.sh
+#!/bin/sh
+set -e
+
+# TODO 注意根据实际情况修改 mac_address、lic1、port 和 host
+ip link set eth0 address <mac_address>
+echo '127.0.0.1 <host>' >> /etc/hosts
+export LD_PRELOAD=/opt/synopsys/scl/2025.03/linux64/bin/snpslmd-hack.so
+
+# lmgrd/snpslmd run as root: the 2025.03 vendor daemon dies with
+# "free(): invalid pointer" when dropped to uid 1001, unlike the 2024.06 one.
+# PID 1 stays this shell so the daemons run with the container's capabilities.
+lmgrd -z -c /opt/synopsys/scl/2025.03/admin/license/license.dat &
+wait
+```
+
+```dockerfile file=Dockerfile.scl
+ARG BUILD_IMAGE=local.io/synopsys/eda-build:8.10
+
+FROM ${BUILD_IMAGE} AS build
+
+COPY scl_v2025.03_common.spf scl_v2025.03_linux64.spf /tmp/src/
+COPY snpslmd-hack.c /tmp/
+
+RUN gcc -shared -fPIC -O2 -o /tmp/snpslmd-hack.so /tmp/snpslmd-hack.c -ldl
+
+RUN /opt/synopsys-installer/batch_installer -allprods -source /tmp/src \
+        -target /opt/synopsys -install_as_root > /tmp/install.log 2>&1; \
+    rc=$?; tail -20 /tmp/install.log; echo "install_rc=$rc"; \
+    test -x /opt/synopsys/scl/2025.03/linux64/bin/lmutil
+```
+
+## 工具，以 VCS 为例
+
+
+# 部署到集群中
+
+## 命名空间
+
+## License Server
+
+我们应该不想让 license server 能直接访问公网然后 Synopsys 给你开了盒，
+ 
+# 工艺库
+
+工艺库通常是几个大块文件，在综合流程的早期（`link_library` 时）会一次性加载，所以对存储的读取性能上没什么大要求，可以安心的直接放到网络共享存储上。
+
+对于开源 pdk，使用 Fossi 的 [ciel](https://github.com/fossi-foundation/ciel) 进行安装管理是最方便的。
+
+# 附录 1：CI/CD 管理工具链镜像

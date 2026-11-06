@@ -4,8 +4,8 @@ export default defineAstroPaperConfig({
   site: {
     // GitHub Pages 项目站点地址（仓库名 blogs），同时也是 RSS / sitemap 的绝对 URL 前缀
     url: "https://observerw.github.io/blogs/",
-    title: "observerw",
-    description: "记录技术、阅读与思考。",
+    title: "",
+    description: "",
     author: "observerw",
     profile: "https://github.com/observerw",
     ogImage: "default-og.jpg",
