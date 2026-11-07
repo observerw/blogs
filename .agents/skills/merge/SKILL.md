@@ -26,9 +26,9 @@ on `origin/main` and the Pages deploy for it succeeded.
 - `main` is unprotected and has no required reviews; history is linear, direct-to-`main`
   pushes, one conventional-commit subject per change (`feat:`, `fix:`, `content:`).
 - Merging means pushing to `main` directly. No branch, pull request, or review step exists.
-- CI job `Code standards & build` runs on `pull_request` only (`lint`, `format:check`,
-  `build`) — `.github/workflows/ci.yml`. A direct push to `main` therefore gets no server-side
-  verification: the local checks in step 3 are the verification and must pass before pushing.
+- CI job `Code standards & build` runs on every push to `main` (`lint`, `format:check`,
+  `build`) — `.github/workflows/ci.yml`. It reports only after the commit is already on `main`, so
+  it cannot block anything: the local checks in step 3 are the gate.
 - `Deploy to GitHub Pages` runs on every push to `main` and rebuilds there —
   `.github/workflows/deploy.yml`. It reports a broken build as a failed deploy, after the push.
 - `.agents/prepare` runs `pnpm install` when Delta creates a checkout; an adopted or reused
@@ -102,15 +102,18 @@ git push origin main
 ```sh
 git rev-parse HEAD
 git log --oneline -3
+gh run list --workflow=ci.yml --branch main --limit 1 \
+  --json databaseId,headSha,status,conclusion
 gh run list --workflow=deploy.yml --branch main --limit 1 \
   --json databaseId,headSha,status,conclusion
 ```
 
-- The newest `Deploy to GitHub Pages` run must be for the commit just pushed (`headSha` equals
-  `git rev-parse HEAD`). If the push was a fast-forward, `origin/main` and local `main` match.
-- If that deploy run is still in progress, watch it (`gh run watch <databaseId> --exit-status`).
-  A failed deploy means the change is on `main` but not published — report both facts plainly,
-  then fix the cause with another commit.
+- Both the `CI` and `Deploy to GitHub Pages` runs must be for the commit just pushed (`headSha`
+  equals `git rev-parse HEAD`). If the push was a fast-forward, `origin/main` and local `main`
+  match.
+- Watch any run still in progress (`gh run watch <databaseId> --exit-status`). A failed CI run
+  means the commit is on `main` with a failing check; a failed deploy means it is on `main` but
+  not published — report both facts plainly, then fix the cause with another commit.
 
 ## Conflicts
 
