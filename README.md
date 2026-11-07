@@ -116,7 +116,9 @@ Tufte 把页边注释当成版面的一部分[@tufte1990]。
 
 ## 部署
 
-推送到 `main` 分支后，`.github/workflows/deploy.yml` 会自动构建并发布到 GitHub Pages。首次使用时需要在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+推送到 `main` 分支后，`.github/workflows/ci.yml` 会先跑 lint、格式检查和构建，全部通过再用
+同一份构建产物发布到 GitHub Pages。首次使用时需要在仓库 **Settings → Pages → Build and
+deployment → Source** 选择 **GitHub Actions**。
 
 仓库作为项目站点部署在 `/blogs/` 子路径下，因此 `astro.config.ts` 中设置了 `base: "/blogs"`。如果以后绑定自定义域名或改名为 `<user>.github.io`，记得同步修改 `site`、`base` 和 `astro-paper.config.ts` 中的 `site.url`。
 

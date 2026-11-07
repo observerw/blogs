@@ -26,11 +26,12 @@ on `origin/main` and the Pages deploy for it succeeded.
 - `main` is unprotected and has no required reviews; history is linear, direct-to-`main`
   pushes, one conventional-commit subject per change (`feat:`, `fix:`, `content:`).
 - Merging means pushing to `main` directly. No branch, pull request, or review step exists.
-- CI job `Code standards & build` runs on every push to `main` (`lint`, `format:check`,
-  `build`) — `.github/workflows/ci.yml`. It reports only after the commit is already on `main`, so
-  it cannot block anything: the local checks in step 3 are the gate.
-- `Deploy to GitHub Pages` runs on every push to `main` and rebuilds there —
-  `.github/workflows/deploy.yml`. It reports a broken build as a failed deploy, after the push.
+- One workflow, `.github/workflows/ci.yml` (`CI & Deploy`), runs on every push to `main`: job
+  `Code standards & build` (`lint`, `format:check`, `build`, then uploads the Pages artifact),
+  then job `Deploy to GitHub Pages` (`needs: build`) publishes that same artifact. One build per
+  push; a failing check stops the deploy.
+- Both jobs report only after the commit is already on `main`, so they cannot block anything: the
+  local checks in step 3 are the gate.
 - `.agents/prepare` runs `pnpm install` when Delta creates a checkout; an adopted or reused
   checkout may still have no `node_modules`.
 - Runtime: Node `>=22.23.4`, pnpm `12.4.1` (`package.json` `engines`, `packageManager`).
@@ -92,7 +93,8 @@ pnpm build                       # .github/workflows/ci.yml step "🚀 Build the
 git push origin main
 ```
 
-- Nothing checks the push server-side, so do not push before step 3 passed on this exact commit.
+- The workflow reports after the push and cannot stop a bad commit, so do not push before step 3
+  passed on this exact commit.
 - Never force-push `main`. If the push is rejected because `origin/main` moved, run
   `git pull --rebase origin main`, re-run the checks in step 3 that the rebase could affect, and
   push again.
@@ -104,16 +106,17 @@ git rev-parse HEAD
 git log --oneline -3
 gh run list --workflow=ci.yml --branch main --limit 1 \
   --json databaseId,headSha,status,conclusion
-gh run list --workflow=deploy.yml --branch main --limit 1 \
-  --json databaseId,headSha,status,conclusion
+gh run view <databaseId> --json jobs
 ```
 
-- Both the `CI` and `Deploy to GitHub Pages` runs must be for the commit just pushed (`headSha`
-  equals `git rev-parse HEAD`). If the push was a fast-forward, `origin/main` and local `main`
+- The newest `CI & Deploy` run must be for the commit just pushed (`headSha` equals
+  `git rev-parse HEAD`), and both of its jobs — `Code standards & build` and `Deploy to GitHub
+  Pages` — must conclude `success`. If the push was a fast-forward, `origin/main` and local `main`
   match.
-- Watch any run still in progress (`gh run watch <databaseId> --exit-status`). A failed CI run
-  means the commit is on `main` with a failing check; a failed deploy means it is on `main` but
-  not published — report both facts plainly, then fix the cause with another commit.
+- Watch a run still in progress (`gh run watch <databaseId> --exit-status`). A failed `Code
+  standards & build` means the commit is on `main` with failing checks and the site was not
+  republished; a failed `Deploy to GitHub Pages` means the checks passed but publishing failed.
+  Report either fact plainly, then fix the cause with another commit.
 
 ## Conflicts
 
