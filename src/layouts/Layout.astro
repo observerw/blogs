@@ -10,6 +10,7 @@ type Props = {
   title?: string;
   description?: string;
   ogImage?: string;
+  ogType?: "website" | "article";
   canonicalURL?: string;
   markdownURL?: string;
 };
@@ -20,6 +21,7 @@ const {
   title = site.title,
   description = site.description,
   ogImage = resolveDefaultOgImagePath(config),
+  ogType = "website",
   canonicalURL = new URL(Astro.url.pathname, Astro.site).href,
   markdownURL,
 } = Astro.props;
@@ -27,6 +29,11 @@ const {
 const socialImageURL = new URL(ogImage, Astro.site ?? Astro.url);
 const rssHref = getAssetPath("rss.xml");
 const llmsHref = new URL(getAssetPath("llms.txt"), Astro.site ?? Astro.url);
+
+// Titles read `<page> | <site>`. The home page and a site without a title both
+// take the bare title, so the suffix can never trail off as an empty ` | `.
+const pageTitle =
+  !site.title || title === site.title ? title : `${title} | ${site.title}`;
 ---
 
 <!doctype html>
@@ -46,16 +53,16 @@ const llmsHref = new URL(getAssetPath("llms.txt"), Astro.site ?? Astro.url);
     <Font cssVariable="--font-noto-serif-sc" />
 
     <!-- Primary meta -->
-    <title>{title}</title>
-    <meta name="title" content={title} />
+    <title>{pageTitle}</title>
+    <meta name="title" content={pageTitle} />
     <meta name="description" content={description} />
     <meta name="author" content={site.author} />
     <link rel="sitemap" href={getAssetPath("sitemap-index.xml")} />
 
     <!-- Open Graph -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={site.title} />
-    <meta property="og:title" content={title} />
+    <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={socialImageURL} />
@@ -63,7 +70,7 @@ const llmsHref = new URL(getAssetPath("llms.txt"), Astro.site ?? Astro.url);
     <!-- Twitter / X -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={title} />
+    <meta property="twitter:title" content={pageTitle} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={socialImageURL} />
 

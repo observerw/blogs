@@ -35,15 +35,19 @@ export default defineConfig({
   integrations: [
     mdx(),
     sitemap({
+      // `search` and `font-preview` are tool pages (both noindex), so they stay
+      // reachable but have no business in a content sitemap.
       filter: page =>
-        config.features?.showArchives !== false || !/\/archives\/?$/.test(page),
+        !/\/(search|font-preview)\/?$/.test(page) &&
+        (config.features?.showArchives !== false ||
+          !/\/archives\/?$/.test(page)),
     }),
     // Generate /llms.txt, /llms-full.txt and one .md file per page after build,
     // so readers and AI agents can consume the posts as plain Markdown.
     llms({
       siteUrl: config.site.url,
-      name: "旧事重提",
-      description: "工程实践、技术原理和阅读笔记",
+      name: config.site.title,
+      description: config.site.description,
       titleSelector: "h1",
       contentSelector: "#article",
       // KaTeX renders each formula twice (visual HTML + MathML with the TeX

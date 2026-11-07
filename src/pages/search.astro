@@ -27,7 +27,9 @@ const pagefindBundlePath = getAssetPath("pagefind/");
 const t = useTranslations(locale);
 ---
 
-<Layout title={`${t.pages.searchTitle} | ${config.site.title}`}>
+<Layout title={t.pages.searchTitle} description={t.pages.searchDesc}>
+  <!-- Results are driven by `?q=`; there is nothing here worth indexing. -->
+  <meta slot="head" name="robots" content="noindex" />
   <Header />
 
   <Breadcrumb />

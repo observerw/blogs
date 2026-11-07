@@ -10,10 +10,11 @@ import Socials from "@/components/Socials.astro";
 import Card from "@/components/Card.astro";
 import LinkButton from "@/components/LinkButton.astro";
 import { getSortedPosts } from "@/utils/getSortedPosts";
+import { toJsonLd } from "@/utils/structuredData";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
 
-const { socials, posts: postsConfig } = config;
+const { socials, posts: postsConfig, site } = config;
 
 const locale = Astro.currentLocale ?? config.site.lang;
 const t = useTranslations(locale);
@@ -23,9 +24,28 @@ const sortedPosts = getSortedPosts(posts);
 const featuredPosts = sortedPosts.filter(({ data }) => data.featured);
 const recentPosts = sortedPosts.filter(({ data }) => !data.featured);
 const homePath = getRelativeLocaleUrl(locale, "");
+
+// Tells search engines which name and URL represent the whole site; the home
+// page is the only place this belongs.
+const websiteJsonLd = toJsonLd({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: site.title,
+  url: new URL(homePath, Astro.site ?? Astro.url).href,
+  description: site.description,
+  inLanguage: site.lang,
+  publisher: {
+    "@type": "Person",
+    name: site.author,
+    ...(site.profile && { url: site.profile }),
+  },
+});
 ---
 
 <Layout>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={websiteJsonLd} />
+  </Fragment>
   <Header />
   <main
     id="main-content"
@@ -35,7 +55,7 @@ const homePath = getRelativeLocaleUrl(locale, "");
   >
     <section id="hero" class="border-border border-b pt-8 pb-6">
       <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">
-        旧事重提
+        {site.title}
       </h1>{" "}
       <a
         target="_blank"
@@ -52,7 +72,7 @@ const homePath = getRelativeLocaleUrl(locale, "");
         <span class="sr-only">RSS 订阅</span>
       </a>
 
-      <p class="mt-2">工程实践、技术原理和阅读笔记</p>
+      <p class="mt-2">{site.description}</p>
       {
         socials.length > 0 && (
           <div class="mt-4 flex max-sm:flex-col sm:items-center">

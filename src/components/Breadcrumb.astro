@@ -1,6 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { stripBase, stripLocale } from "@/utils/withBase";
+import { toJsonLd } from "@/utils/structuredData";
 import { useTranslations } from "@/i18n";
 import config from "@/config";
 
@@ -55,39 +56,65 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
     }`
   );
 }
+
+// One list drives both the rendered trail and its structured data, so the two
+// can't drift. The pager rewrites above can replace segments with labels, so
+// the last crumb points at the page itself rather than at a path segment.
+const currentHref = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const crumbs = [
+  { name: t.nav.home, href: getRelativeLocaleUrl(locale, "") },
+  ...breadcrumbList.map((breadcrumb, index) => ({
+    name: navLabels[breadcrumb] ?? decodeSegment(breadcrumb),
+    href:
+      index === breadcrumbList.length - 1
+        ? currentHref
+        : getRelativeLocaleUrl(locale, breadcrumb),
+  })),
+];
+
+const breadcrumbJsonLd = toJsonLd({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: crumbs.map((crumb, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: crumb.name,
+    item: new URL(crumb.href, Astro.site ?? Astro.url).href,
+  })),
+});
 ---
 
 <nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
   <ul
     class="flex flex-wrap items-center gap-x-1 font-light [&>li:not(:last-child)>a]:hover:opacity-100"
   >
-    <li class="flex items-center gap-x-1">
-      <a href={getRelativeLocaleUrl(locale, "")} class="opacity-80">
-        {t.nav.home}
-      </a>
-      <span aria-hidden="true" class="opacity-80">&raquo;</span>
-    </li>
     {
-      breadcrumbList.map((breadcrumb, index) =>
-        index + 1 === breadcrumbList.length ? (
+      crumbs.map((crumb, index) =>
+        index === crumbs.length - 1 ? (
           <li>
             <span
               class:list={["capitalize opacity-75", { lowercase: index > 0 }]}
               aria-current="page"
             >
               {/* make the last part lowercase in Home > Tags > some-tag */}
-              {navLabels[breadcrumb] ?? decodeSegment(breadcrumb)}
+              {crumb.name}
             </span>
           </li>
         ) : (
           <li class="flex items-center gap-x-1">
             <a
-              href={getRelativeLocaleUrl(locale, breadcrumb)}
-              class="capitalize opacity-70"
+              href={crumb.href}
+              class:list={[
+                "capitalize",
+                index === 0 ? "opacity-80" : "opacity-70",
+              ]}
             >
-              {navLabels[breadcrumb] ?? decodeSegment(breadcrumb)}
+              {crumb.name}
             </a>
-            <span aria-hidden="true" class="opacity-70">
+            <span
+              aria-hidden="true"
+              class:list={[index === 0 ? "opacity-80" : "opacity-70"]}
+            >
               &raquo;
             </span>
           </li>
@@ -95,4 +122,5 @@ if (breadcrumbList[0] === "tags" && !isNaN(Number(breadcrumbList[2]))) {
       )
     }
   </ul>
+  <script type="application/ld+json" is:inline set:html={breadcrumbJsonLd} />
 </nav>

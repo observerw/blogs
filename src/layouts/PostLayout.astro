@@ -1,5 +1,7 @@
 ---
 import Layout from "./Layout.astro";
+import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
+import { toJsonLd } from "@/utils/structuredData";
 import config from "@/config";
 
 type Props = {
@@ -28,7 +30,13 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   headline: title ?? site.title,
-  image: ogImage,
+  ...(description && { description }),
+  // Google requires an image for Article rich results. Posts without their own
+  // image fall back to the site default, matching <meta property="og:image">.
+  image: new URL(
+    ogImage ?? resolveDefaultOgImagePath(config),
+    Astro.site ?? Astro.url
+  ).href,
   ...(pubDatetime && { datePublished: pubDatetime.toISOString() }),
   ...(modDatetime && { dateModified: modDatetime.toISOString() }),
   author: [
@@ -40,19 +48,18 @@ const structuredData = {
   ],
 };
 
-// JSON.stringify leaves `<` alone, so a title containing `</script>` would
-// end the ld+json block early. `\u003c` reads back as `<` for JSON parsers.
-const structuredDataJson = JSON.stringify(structuredData).replace(
-  /</g,
-  "\\u003c"
-);
+const structuredDataJson = toJsonLd(structuredData);
 ---
 
-<Layout {title} {description} {ogImage} {canonicalURL} {markdownURL}>
+<Layout
+  {title}
+  {description}
+  {ogImage}
+  {canonicalURL}
+  {markdownURL}
+  ogType="article"
+>
   <Fragment slot="head">
-    <!-- Override og:type for article pages -->
-    <meta property="og:type" content="article" />
-
     {
       pubDatetime && (
         <meta
