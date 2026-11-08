@@ -23,15 +23,17 @@ import { transformerFileName } from "./src/utils/transformers/fileName";
 import { rehypeTableWrapper } from "./src/utils/rehypeTableWrapper";
 import { rehypeSidenotes } from "./src/utils/rehypeSidenotes";
 import { remarkCitations } from "./src/utils/remarkCitations";
+import { remarkBasePath } from "./src/utils/remarkBasePath";
 import config from "./astro-paper.config";
 
 // GitHub Pages serves this project site under /blogs/. Local dev starts at the
 // root instead, so pages are reachable as /posts/... without the prefix.
 const isDev = process.env.NODE_ENV === "development";
+const base = isDev ? "/" : "/blogs";
 
 export default defineConfig({
   site: config.site.url,
-  base: isDev ? "/" : "/blogs",
+  base,
   integrations: [
     mdx(),
     sitemap({
@@ -72,6 +74,9 @@ export default defineConfig({
         // `[@citekey]` becomes a footnote, which rehypeSidenotes floats into
         // the margin on wide screens.
         [remarkCitations, { bibliography: "src/content/references.bib" }],
+        // Content links to other posts are written as `/posts/foo`; this adds
+        // the base so they resolve in production builds.
+        [remarkBasePath, { base }],
       ],
       rehypePlugins: [
         rehypeCallouts,
