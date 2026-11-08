@@ -1,0 +1,43 @@
+---
+import { getEntry, render } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import { getAssetPath } from "@/utils/withBase";
+
+const resume = await getEntry("pages", "resume");
+
+if (!resume) {
+  throw new Error(
+    "Missing content entry: `resume.md` or `resume.mdx` in `src/content/pages/`"
+  );
+}
+
+const { Content } = await render(resume);
+
+// `public/resume.pdf` is compiled from typst/resume.typ by `pnpm build:pdf`.
+const pdfPath = getAssetPath("resume.pdf");
+---
+
+<Layout
+  title={resume.data.title}
+  description={resume.data.description}
+  ogImage={resume.data.ogImage}
+  canonicalURL={resume.data.canonicalURL}
+>
+  <Header />
+
+  <Breadcrumb />
+
+  <Main pageTitle={resume.data.title} class="app-prose">
+    <p class="mb-8 text-sm">
+      排好版的 PDF：
+      <a href={pdfPath} download>下载 resume.pdf</a>
+    </p>
+    <Content />
+  </Main>
+
+  <Footer />
+</Layout>

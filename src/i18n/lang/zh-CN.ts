@@ -5,7 +5,7 @@ export default {
     home: "首页",
     posts: "文章",
     tags: "标签",
-    about: "关于",
+    resume: "简历",
     archives: "归档",
     search: "搜索",
   },

@@ -1,5 +1,7 @@
 # build output
 dist/
+# compiled from typst/resume.typ by `pnpm build:pdf`
+public/resume.pdf
 
 # generated types
 .astro/

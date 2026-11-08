@@ -39,6 +39,17 @@ jobs:
       - name: "📦 Install dependencies"
         run: pnpm install --frozen-lockfile
 
+      # `pnpm build` 先用 Typst 把 typst/resume.typ 编译成 public/resume.pdf。
+      # 版本与本地保持一致，避免 CI 和本地产出的 PDF 排版不同。
+      - name: "📐 Setup Typst"
+        uses: typst-community/setup-typst@v5
+        with:
+          typst-version: 0.15.1
+
+      # Typst 自身不带中文字体，装 Noto CJK 让 resume.typ 里的宋体回退能命中。
+      - name: "🔤 Install CJK fonts"
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-cjk
+
       - name: "🔎 Lint code"
         run: pnpm run lint
 

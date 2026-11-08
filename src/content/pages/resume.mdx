@@ -1,0 +1,51 @@
+---
+title: "简历"
+description: "王博伟（observerw）的简历：研究方向、工程项目与技术栈。"
+---
+
+{/*
+  Web 版简历。同一份内容还有排版用的 Typst 版本：typst/resume.typ，
+  改动时请两边同步。
+*/}
+
+软件工程博士生，研究方向为基于大语言模型的处理器设计自动化，平时关注 EDA
+工具链与 Linux 基础设施的工程实践。
+
+## 基本信息
+
+- 姓名：王博伟（observerw）
+- 邮箱：[wangbowei@nudt.edu.cn](mailto:wangbowei@nudt.edu.cn)
+- GitHub：[@observerw](https://github.com/observerw)
+- 博客：[旧事重提](https://observerw.github.io/blogs/)
+
+## 教育经历
+
+**国防科技大学** · 计算机学院 · 软件工程 · 2023 级直博生（在读）
+
+## 研究方向
+
+- 基于大语言模型的处理器增量设计：RTL 生成与时序优化
+- EDA 工具链的容器化与集群调度
+
+## 工程项目
+
+### 云原生 Agentic EDA 集群
+
+把课题组 11 台服务器的集群改造成 Kubernetes 平台：EDA 工具链容器化、LVM
+存储分层、Samba 多用户共享，让 Agent 和人一样按需申请算力。
+
+### 基于 LVM 的 4 盘位多用户 NAS
+
+用 LVM thin pool 把四块 7.3 TB 硬盘划分为重要数据与资源盘，配合 Samba
+权限隔离和脚本化备份，供多人长期共用。
+
+### 本站
+
+Astro + MDX 的静态博客：Pagefind 全文搜索、BibTeX 引注，简历另有一份由 Typst
+排版的 PDF。
+
+## 技术栈
+
+- 系统与云原生：Linux、Kubernetes、Docker、LVM、Samba
+- 硬件设计：VCS 等 Synopsys EDA 工具的部署与批处理
+- 写作与排版：Markdown、MDX、Typst、Astro

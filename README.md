@@ -6,7 +6,8 @@
 
 ## 本地开发
 
-需要 Node.js >= 22.23.4 和 pnpm。
+需要 Node.js >= 22.23.4、pnpm，以及 [Typst](https://typst.app/) 0.15.1（用于编译
+简历 PDF，见下文）。
 
 ```sh
 pnpm install
@@ -17,13 +18,14 @@ pnpm dev
 
 常用命令：
 
-| 命令           | 说明                                   |
-| -------------- | -------------------------------------- |
-| `pnpm dev`     | 启动开发服务器                         |
-| `pnpm build`   | 类型检查、构建并生成 Pagefind 搜索索引 |
-| `pnpm preview` | 预览构建产物                           |
-| `pnpm format`  | 用 Prettier 格式化                     |
-| `pnpm lint`    | 运行 ESLint                            |
+| 命令             | 说明                                       |
+| ---------------- | ------------------------------------------ |
+| `pnpm dev`       | 启动开发服务器                             |
+| `pnpm build`     | 编译简历 PDF、类型检查、构建并生成搜索索引 |
+| `pnpm build:pdf` | 只用 Typst 重新编译简历 PDF                |
+| `pnpm preview`   | 预览构建产物                               |
+| `pnpm format`    | 用 Prettier 格式化                         |
+| `pnpm lint`      | 运行 ESLint                                |
 
 ## 目录结构
 
@@ -32,11 +34,12 @@ pnpm dev
 ├── astro-paper.config.ts   # 站点信息、社交链接、功能开关
 ├── astro.config.ts         # Astro 配置（base、i18n、Markdown）
 ├── public/                 # favicon、默认 OG 图等静态资源
+├── typst/resume.typ        # 简历的排版版本，编译成 public/resume.pdf
 └── src/
     ├── content/
     │   ├── posts/          # 文章
     │   ├── references.bib  # 参考文献库，文章里用 [@citekey] 引用
-    │   └── pages/about.mdx # 关于页
+    │   └── pages/resume.mdx # 简历页
     ├── i18n/lang/          # 界面文案（zh-CN）
     ├── pages/              # 路由：首页、文章、标签、归档、搜索
     └── styles/             # 主题与排版样式
@@ -114,11 +117,27 @@ Tufte 把页边注释当成版面的一部分[@tufte1990]。
 
 引用渲染成脚注，和手写的 `[^1]` 共用同一套编号，宽屏下也同样浮动在右侧页边。条目按「作者. 标题. 出处, 年份」的固定顺序拼出来，有 `doi` 或 `url` 字段时附在末尾作为链接；键名写错会在构建时直接报错。实现见 `src/utils/remarkCitations.js`，文献库路径是 `astro.config.ts` 里 `remarkCitations` 的 `bibliography` 选项。
 
+## 简历
+
+`/resume/` 是简历页，同一份内容维护两个版本：
+
+- `src/content/pages/resume.mdx`：网页版，和普通页面一样用 MDX 撰写
+- `typst/resume.typ`：排版版，由 Typst 编译成 `public/resume.pdf`，页面顶部有下载
+  链接
+
+改内容时两边手动同步。`public/resume.pdf` 是构建产物，不进版本库；`pnpm build`
+会先跑 `pnpm build:pdf` 再构建站点，所以构建机需要装 Typst 0.15.1。`typst/resume.typ`
+的字体按 `Noto Serif CJK SC → Songti SC → STSong` 回退，缺字体时 Typst 会给出警告
+并跳到下一个可用的；CI 里由 `fonts-noto-cjk` 提供前者，本机 macOS 命中 Songti SC。
+
 ## 部署
 
 推送到 `main` 分支后，`.github/workflows/ci.yml` 会先跑 lint、格式检查和构建，全部通过再用
 同一份构建产物发布到 GitHub Pages。首次使用时需要在仓库 **Settings → Pages → Build and
 deployment → Source** 选择 **GitHub Actions**。
+
+简历 PDF 也在 `build` 作业里生成：[`typst-community/setup-typst`](https://github.com/typst-community/setup-typst)
+装好 Typst 0.15.1，`fonts-noto-cjk` 提供中文字体，PDF 随站点一起发布。
 
 仓库作为项目站点部署在 `/blogs/` 子路径下，因此 `astro.config.ts` 中设置了 `base: "/blogs"`。如果以后绑定自定义域名或改名为 `<user>.github.io`，记得同步修改 `site`、`base` 和 `astro-paper.config.ts` 中的 `site.url`。
 
