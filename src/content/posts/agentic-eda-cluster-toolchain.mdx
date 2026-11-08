@@ -7,9 +7,7 @@ draft: false
 featured: false
 ---
 
-# EDA 工具的镜像构建
-
-## 基础环境
+# 基础环境
 
 采用多阶段构建时，构建阶段基础镜像：
 
@@ -76,7 +74,7 @@ ENV LANG=en_US.UTF-8 \
 WORKDIR /work
 ```
 
-## SCL
+# SCL
 
 ```sh file=entrypoint.sh
 #!/bin/sh
@@ -110,8 +108,17 @@ RUN /opt/synopsys-installer/batch_installer -allprods -source /tmp/src \
     test -x /opt/synopsys/scl/2025.03/linux64/bin/lmutil
 ```
 
-## 工具，以 VCS 为例
+# 工具，以 VCS 为例
 
+# VIP
+
+VIP 的那些 `*.run` 大多数都是 IP 的 PDF 文档；真正的 IP 内容在 `vip_library19_svt-*.run` 里。
+
+# 工艺库
+
+工艺库通常是几个大块文件，在综合流程的早期（`link_library` 时）会一次性加载，所以对存储的读取性能上没什么大要求，可以安心的直接放到网络共享存储上。
+
+开源 pdk 可以使用 Fossi 的 [ciel](https://github.com/fossi-foundation/ciel) 进行安装管理；至于工业级 pdk 如经典的 SMIC 28nm，则需要你自己显神通了。
 
 # 部署到集群中
 
@@ -121,10 +128,5 @@ RUN /opt/synopsys-installer/batch_installer -allprods -source /tmp/src \
 
 我们应该不想让 license server 能直接访问公网然后 Synopsys 给你开了盒，
  
-# 工艺库
-
-工艺库通常是几个大块文件，在综合流程的早期（`link_library` 时）会一次性加载，所以对存储的读取性能上没什么大要求，可以安心的直接放到网络共享存储上。
-
-对于开源 pdk，使用 Fossi 的 [ciel](https://github.com/fossi-foundation/ciel) 进行安装管理是最方便的。
 
 # 附录 1：CI/CD 管理工具链镜像
