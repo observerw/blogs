@@ -1,0 +1,81 @@
+---
+title: "在云原生生态中大规模部署 Agent：生态调研"
+pubDatetime: 2026-11-21T21:00:00+08:00
+description: "调研云原生生态中大规模部署 Agent 的现有方案，包括 Agent Substrate、Agent Sandbox 与 Google Agent Executor。"
+tags: ["Agent", "Kubernetes", "Cloud Native", "AI"]
+draft: false
+featured: false
+---
+
+# [Agent Substrate](https://ate.dev)
+
+Substrate 这个词意义不明，比较多的出现在生物或者半导体领域中，表达底物或者基板的意思；用在这里可能是想说这套东西是用于 Agent 的底层基础设施。
+
+## [k8s官方对此的 podcast](https://kubernetespodcast.com/episode/272-agent-substrate/)
+
+如下是对 Podcast 内容的整理，其中我个人的引申理解会在引用块中标注出来：
+
+### Agent 工作负载的特征
+
+Agent 是一类具有特殊性质的新型工作负载，它本身需要隔离的虚拟机环境来运行，环境中应当具有文件系统、终端等必要能力。
+同时在其运行过程中又*经常会出现空闲的情况*，比如 Agent 需要等待 LLM 响应，或者与人交互的时候需要等待人类审批等；整体空闲率甚至超过 90%，成为可观的问题。
+
+> [!note] 我对于空闲的理解
+> 在我的理解中，Agent 的运行是一个纯 IO 密集的过程，因为整个过程基本上就是如下两个过程的交替：请求 LLM API 端点等待模型推理服务的响应；调用工具后等待工具执行完成/等待外部响应。
+> 这两个过程都基本上是完全在等待 IO。
+> 因此 Agent 的空闲是本质性的，不是一个可以通过重新编写 Agent Harness 代码来优化掉的问题。
+
+现在的问题是 k8s 是为服务于传统应用（数据库，web 服务等）而设计的。
+这些应用从设计之初的工作方式就是启动一次然后持久占用资源，k8s 目前的原语是基于这种特征来设计的。
+对于这些应用，启动速度显得无伤大雅，因为启动后就可以持续为多用户提供服务。
+
+但对于 Agent 则情况不同：每个 Agent 实例只能对应单用户；且每个 Agent 都会作为 k8s 的工作负载来启动，因为需要隔离。
+这就导致用户启动并使用 Agent 实例的这个过程，必须要能做到像是给 http server 发送一条请求一样轻盈才行。
+
+### Suspend 和 Resume
+
+一个自然的想法是，如果 Agent 这种负载能够轻量级的挂起（suspend），然后在用户需要的时候恢复（resume），就能应对上述需求了；
+然而现实是 k8s 不支持挂起恢复这种操作，因为 k8s 默认假设 pod 是无状态可缩放的，所以停止 pod 是 scale 到 0 并将现有 pod 优雅终止，容器内的进程和状态会全部丢失掉；这显然不是 Agent 所期望的挂起行为。
+
+如果要从用户体验出发，就只能选择让 Agent 实例持久服务来避免状态丢失和启动开销，导致其多数时间都是空转，无端占用着资源。
+在这种情况下，Agent 资源的占用是随着用户数量而线性增长的，而非像传统应用那样根据当前实际活跃工作量而增长。
+要求服务提供商必须从资源占用和用户体验之间做权衡是不合理的，因此才需要新的原语来应对这一问题。
+
+挂起与恢复关乎虚拟机的快照（Snapshot）概念。
+所有的 VM hypervisor 都会有 suspend 和 resume 的能力。
+当被要求挂起某个实例时，其将会做一个快照，计算出相对于基础镜像在*内存*和*磁盘*上改变了什么，然后将其存储为文件。
+通过将这些文件再次送入 hypervisor 便可完全恢复实例之前的状态并继续运行。
+
+Agent Substrate 目前支持将快照文件存储到本地磁盘或云存储。
+
+### Actor 和 Worker
+
+在 Agent Sandbox / Substrate 中区分 actor 和 worker 的概念。
+其中 actor 代表的是 agent 的执行生命周期，对应到常用 harness 上就是一个 session；而 worker 则是运行这些 session 的执行环境。
+
+> [!note] 我对于 actor-worker 的理解
+> 前文已经说明了 Agent 运行是纯 IO 密集的；而现代编程语言对于这类场景采用的应对方法是异步编程。
+> 其中 [go 语言采用的 goroutine 是 M:N 有栈协程](https://www.youtube.com/watch?v=f6kdp27TYZs)，M 个虚拟的 goroutine 对应 N 个系统线程。
+> 把这套思想引入到 Agent 上是自然的：Agent session （actor）对应虚拟线程，执行环境（worker）对应系统线程。
+> 在具体实现中，actor 是 Agent Substrate 自定义的一种 API 资源，其中包含 snapshot；worker 是一个 pod，其中运行一个 gVisor Sandbox。
+> 当然，这套模型看起来好像也可以使用 k8s 原本的 pod-node 模型来对应，但：
+> - 前文已经解释 k8s 原生不支持 suspend resume 这套原语，与需求不符；
+> - 而且 snapshot 的运行环境必须是虚拟机 Sandbox 而非 k8s 的容器运行时；
+> - 而且把 worker pod 交给 k8s 来进行资源管理和调度是非常合理的选择；
+> 所以引入这套 actor-worker 是非常有必要的，在这套模型中 worker 占据了 node 的抽象概念，而 actor 占据了 pod 的概念。
+
+值得注意的一点是这套 actor-worker 抽象中，虽然 worker 仍然受到 k8s 管理，但 actor 绕开了 k8s 的控制面。
+Tim Hockin 对此的见解是：*需要调度的负载数量级不同，所需的控制面也必须相应发生变化*。
+对于目前的 k8s 来说，包含 20万个节点，调度超过 100万个 pod 已经是非常困难的事情了；
+然而对于 agent 而言，甚至有可能需要在单个集群中调度一亿甚至十亿个 Agent，带来数量级的差异。
+
+# [Agent Sandbox](https://github.com/kubernetes-sigs/agent-sandbox)
+
+k8s-sig 官方推出的新的*沙箱编排器*。
+其贡献为将 Agent 沙箱这种具有独特特征的新资源作为名为 `Sandbox` 的新 CRD 来管理。
+
+这一动机是，Agent Sandbox 本身是有状态的，每个 Sandbox 本身是独一无二的；
+
+Agent Sandbox 作为一个开源项目，真正聚焦在 pod 的生命周期上：确保我们能最高效地交付那个 pod，并在挂起 pod 这件事上提供更直观的人机工程。
+
+# [Google ax](https://agentexecutor.io)
